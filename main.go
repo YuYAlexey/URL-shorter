@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/adYushinW/RestAPi/internal/transport/http"
+	"github.com/adYushinW/URL-shorter/internal/transport/http"
 )
 
 func main() {
