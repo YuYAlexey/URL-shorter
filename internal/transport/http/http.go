@@ -4,34 +4,29 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/adYushinW/URL-shorter/internal/app"
 	"github.com/gin-gonic/gin"
 )
 
-func Service() error {
+func Service(app *app.App) error {
 	r := gin.Default()
 
-	r.GET("/ping", getPing)
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, "pong")
+	})
 
-	r.POST("/short", postShort)
+	r.POST("/short", func(c *gin.Context) {
+		c.JSON(http.StatusOK, "pong")
+	})
 
-	r.GET("/:hash", getHash)
+	r.GET("/:hash", func(c *gin.Context) {
+		hash, ok := c.Params.Get("hash")
+		if !ok {
+			c.JSON(http.StatusBadRequest, nil)
+			return
+		}
+		c.JSON(http.StatusOK, fmt.Sprintf("я получил хэш: %v", hash))
+	})
 
 	return r.Run(":8080")
-}
-
-func getPing(c *gin.Context) {
-	c.JSON(http.StatusOK, "pong")
-}
-
-func postShort(c *gin.Context) {
-	c.JSON(http.StatusOK, "я верну тебе короткую ссылку")
-}
-
-func getHash(c *gin.Context) {
-	hash, ok := c.Params.Get("hash")
-	if !ok {
-		c.JSON(http.StatusBadRequest, nil)
-		return
-	}
-	c.JSON(http.StatusOK, fmt.Sprintf("я получил хэш: %v", hash))
 }
