@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -15,8 +16,26 @@ func Service(app *app.App) error {
 		c.JSON(http.StatusOK, "pong")
 	})
 
-	r.POST("/short", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "pong")
+	r.POST("/site", func(c *gin.Context) {
+		var i interface{}
+		err := json.NewDecoder(c.Request.Body).Decode(&i)
+		if err != nil {
+			return
+		}
+		shortHash, err := app.SetHash(i.(string))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, nil)
+			return
+		}
+
+		shorterURL := fmt.Sprintf("https://%s/%s", "short.ss", shortHash)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, nil)
+			return
+		}
+
+		c.JSON(http.StatusOK, shorterURL)
+
 	})
 
 	r.GET("/:hash", func(c *gin.Context) {
@@ -25,7 +44,14 @@ func Service(app *app.App) error {
 			c.JSON(http.StatusBadRequest, nil)
 			return
 		}
-		c.JSON(http.StatusOK, fmt.Sprintf("я получил хэш: %v", hash))
+
+		link, err := app.GetHash(hash)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, nil)
+			return
+		}
+		c.JSON(http.StatusFound, link)
+		c.Redirect(http.StatusFound, link)
 	})
 
 	return r.Run(":8080")
