@@ -2,7 +2,6 @@ package app
 
 import (
 	"crypto/md5"
-	"database/sql"
 	"encoding/hex"
 
 	"github.com/adYushinW/URL-shorter/internal/db"
@@ -18,13 +17,25 @@ func New(db db.Database) *App {
 	}
 }
 
+const hashLength = 8
+
+func genHash(link string) string {
+	algorithm := md5.New()
+	algorithm.Write([]byte(link))
+	hash := hex.EncodeToString(algorithm.Sum(nil))
+
+	shortHash := string(hash[:hashLength])
+	return shortHash
+}
+
 func (app *App) GetHash(hash string) (original string, err error) {
 	return app.db.GetHash(hash)
 }
 
 func (app *App) SetHash(link string) (string, error) {
-	short, err := app.db.GetLink(link)
-	if err != nil && err != sql.ErrNoRows {
+	short, err := app.db.GetHash(link)
+
+	if err != nil {
 		return "", err
 	}
 
@@ -32,11 +43,7 @@ func (app *App) SetHash(link string) (string, error) {
 		return short, nil
 	}
 
-	algorithm := md5.New()
-	algorithm.Write([]byte(link))
-	hash := hex.EncodeToString(algorithm.Sum(nil))
-
-	shortHash := string(hash[:8])
+	shortHash := genHash(link)
 
 	url, err := app.db.AddLink(link, shortHash)
 	if err != nil {
@@ -44,12 +51,4 @@ func (app *App) SetHash(link string) (string, error) {
 	}
 
 	return shortHash, nil
-}
-
-func (app *App) GetLink(link string) (hash string, err error) {
-	return app.db.GetHash(link)
-}
-
-func (app *App) AddLink(link string, hash string) (url string, err error) {
-	return app.db.AddLink(link, hash)
 }

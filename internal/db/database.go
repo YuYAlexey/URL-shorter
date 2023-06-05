@@ -2,11 +2,12 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 )
 
 type Database interface {
-	GetHash(hash string) (link string, err error)
-	GetLink(link string) (hash string, err error)
+	GetLink(hash string) (link string, err error)
+	GetHash(link string) (hash string, err error)
 	AddLink(link string, hash string) (url string, err error)
 }
 
@@ -25,17 +26,23 @@ func New() (Database, error) {
 	}, nil
 }
 
-func (db *database) GetHash(hash string) (link string, err error) {
+func (db *database) GetLink(hash string) (link string, err error) {
 	query := "SELECT link FROM url WHERE hash=$1"
 	row := db.conn.QueryRow(query, hash)
 	err = row.Scan(&link)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", err
+	}
 	return link, err
 }
 
-func (db *database) GetLink(link string) (hash string, err error) {
-	query := "SELECT link FROM url WHERE link = $1"
+func (db *database) GetHash(link string) (hash string, err error) {
+	query := "SELECT hash FROM url WHERE link = $1"
 	row := db.conn.QueryRow(query, link)
 	err = row.Scan(&hash)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", err
+	}
 	return hash, err
 }
 
@@ -43,5 +50,8 @@ func (db *database) AddLink(link string, hash string) (url string, err error) {
 	query := "INSERT INTO url (link, hash) VALUES ($1, $2)"
 	row := db.conn.QueryRow(query, link, hash)
 	err = row.Scan(&hash)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", err
+	}
 	return hash, err
 }

@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	conn, err := db.New()
 	if err != nil {
 		panic(err)
